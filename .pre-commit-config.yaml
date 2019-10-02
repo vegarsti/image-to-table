@@ -1,0 +1,14 @@
+repos:
+-   repo: https://github.com/asottile/seed-isort-config
+    rev: 51dfa07
+    hooks:
+    -   id: seed-isort-config
+-   repo: https://github.com/pre-commit/mirrors-isort
+    rev: fe48703
+    hooks:
+    -   id: isort
+        additional_dependencies: [toml]
+-   repo: https://github.com/psf/black
+    rev: 026c81b
+    hooks:
+      - id: black
