@@ -14,10 +14,11 @@ line_length=120                # corresponds to -w  flag
 multi_line_output=3            # corresponds to -m  flag
 include_trailing_comma=true    # corresponds to -tc flag
 skip_glob = '^((?!py$).)*$'    # isort all Python files
-known_third_party = []
+known_third_party = ["cv2", "google"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
+opencv-python = "^4.1"
 google-cloud-vision = "^0.39.0"
 
 [tool.poetry.dev-dependencies]
