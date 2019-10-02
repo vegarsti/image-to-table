@@ -24,7 +24,7 @@ google-cloud-vision = "^0.39.0"
 ipython = "^7.8"
 isort = "^4.3"
 seed-isort-config = "^1.9"
-
+black = {version = "^18.3-alpha.0", allows-prereleases = true}
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
