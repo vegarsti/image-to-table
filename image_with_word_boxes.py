@@ -1,7 +1,61 @@
 import io
+from dataclasses import dataclass
+from typing import Tuple
 
 import cv2
+import matplotlib.pyplot as plt
 from google.cloud import vision
+
+
+@dataclass
+class Corner:
+    x: int
+    y: int
+
+    def as_tuple(self):
+        return self.x, self.y
+
+
+@dataclass
+class Box:
+    lower_left_corner: Corner
+    lower_right_corner: Corner
+    upper_right_corner: Corner
+    upper_left_corner: Corner
+
+    def point_inside(self, x, y):
+        return (
+            self.lower_left_corner.x <= x <= self.upper_right_corner.x
+            and self.lower_left_corner.y <= y <= self.upper_right_corner.y
+        )
+
+    def x_inside(self, x):
+        return self.lower_left_corner.x <= x <= self.upper_right_corner.x
+
+    def y_inside(self, y):
+        return self.lower_left_corner.y <= y <= self.upper_right_corner.y
+
+    def max_x(self):
+        return max(
+            corner.x
+            for corner in (
+                self.lower_left_corner,
+                self.lower_right_corner,
+                self.upper_right_corner,
+                self.lower_right_corner,
+            )
+        )
+
+    def max_y(self):
+        return max(
+            corner.y
+            for corner in (
+                self.lower_left_corner,
+                self.lower_right_corner,
+                self.upper_right_corner,
+                self.lower_right_corner,
+            )
+        )
 
 
 def detect_text(image_path):
@@ -13,11 +67,12 @@ def detect_text(image_path):
     response = client.text_detection(image=image)
     texts = response.text_annotations
 
-    word_boxes = []
+    boxes = []
     for text in texts:
-        vertices = [(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices]
-        word_boxes.append(vertices)
-    return word_boxes
+        corners = [Corner(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices]
+        box = Box(*corners)
+        boxes.append(box)
+    return boxes
 
 
 def show_image_with_word_boxes(filename, boxes):
@@ -25,8 +80,10 @@ def show_image_with_word_boxes(filename, boxes):
     color = (0, 0, 0)
     thickness = 2
     # skip first, large box
-    for upper_left_corner, _, lower_right_corner, _ in boxes[1:]:
-        image = cv2.rectangle(image, upper_left_corner, lower_right_corner, color, thickness)
+    for box in boxes[1:]:
+        image = cv2.rectangle(
+            image, box.upper_left_corner.as_tuple(), box.lower_right_corner.as_tuple(), color, thickness
+        )
     cv2.imshow("table", image)
     while True:
         key = cv2.waitKey(0)
@@ -35,6 +92,41 @@ def show_image_with_word_boxes(filename, boxes):
     cv2.destroyAllWindows()
 
 
+def count_boxes_in_x(boxes, x):
+    return sum(box.x_inside(x) for box in boxes)
+
+
+def count_boxes_in_y(boxes, y):
+    return sum(box.y_inside(y) for box in boxes)
+
+
 filename = "example.png"
-all_vertices = detect_text(filename)
-show_image_with_word_boxes(filename, all_vertices)
+boxes = detect_text(filename)
+show_image_with_word_boxes(filename, boxes)
+
+
+max_x = max(box.max_x() for box in boxes)
+max_y = max(box.max_y() for box in boxes)
+print(max_x)
+print(max_y)
+
+
+x_counts = []
+for x in range(max_x):
+    x_counts.append(count_boxes_in_x(boxes, x))
+
+plt.plot(x_counts)
+plt.show()
+
+z = 0
+y_counts = []
+for y in range(max_y):
+    count = count_boxes_in_y(boxes, y)
+    y_counts.append(count)
+    if count == 1:
+        z += 1
+print(z)
+print(len(boxes))
+
+plt.plot(y_counts)
+plt.show()
