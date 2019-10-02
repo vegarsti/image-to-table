@@ -106,27 +106,11 @@ show_image_with_word_boxes(filename, boxes)
 
 
 max_x = max(box.max_x() for box in boxes)
-max_y = max(box.max_y() for box in boxes)
-print(max_x)
-print(max_y)
-
-
-x_counts = []
-for x in range(max_x):
-    x_counts.append(count_boxes_in_x(boxes, x))
-
+x_counts = [count_boxes_in_x(boxes, x) for x in range(max_x)]
 plt.plot(x_counts)
 plt.show()
 
-z = 0
-y_counts = []
-for y in range(max_y):
-    count = count_boxes_in_y(boxes, y)
-    y_counts.append(count)
-    if count == 1:
-        z += 1
-print(z)
-print(len(boxes))
-
+max_y = max(box.max_y() for box in boxes)
+y_counts = [count_boxes_in_y(boxes, y) for y in range(max_y)]
 plt.plot(y_counts)
 plt.show()
