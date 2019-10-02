@@ -18,6 +18,7 @@ known_third_parties = []
 
 [tool.poetry.dependencies]
 python = "^3.7"
+google-cloud-vision = "^0.39.0"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.8"
