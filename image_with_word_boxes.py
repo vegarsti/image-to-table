@@ -79,8 +79,8 @@ def show_image_with_word_boxes(filename, boxes):
     image = cv2.imread(filename)
     color = (0, 0, 0)
     thickness = 2
-    # skip first, large box
-    for box in boxes[1:]:
+    # skip first, large box with everything
+    for box in boxes:
         image = cv2.rectangle(
             image, box.upper_left_corner.as_tuple(), box.lower_right_corner.as_tuple(), color, thickness
         )
@@ -92,25 +92,95 @@ def show_image_with_word_boxes(filename, boxes):
     cv2.destroyAllWindows()
 
 
-def count_boxes_in_x(boxes, x):
-    return sum(box.x_inside(x) for box in boxes)
+def boxes_in_x(boxes, x):
+    return [box for box in boxes if box.x_inside(x)]
 
 
-def count_boxes_in_y(boxes, y):
-    return sum(box.y_inside(y) for box in boxes)
+def boxes_in_y(boxes, y):
+    return [box for box in boxes if box.y_inside(y)]
 
 
 filename = "example.png"
-boxes = detect_text(filename)
-show_image_with_word_boxes(filename, boxes)
-
+boxes = detect_text(filename)[1:]
 
 max_x = max(box.max_x() for box in boxes)
-x_counts = [count_boxes_in_x(boxes, x) for x in range(max_x)]
-plt.plot(x_counts)
-plt.show()
+x_counts = [len(boxes_in_x(boxes, x)) for x in range(max_x)]
 
 max_y = max(box.max_y() for box in boxes)
-y_counts = [count_boxes_in_y(boxes, y) for y in range(max_y)]
-plt.plot(y_counts)
-plt.show()
+boxes_in_ys = [boxes_in_y(boxes, y) for y in range(max_y)]
+y_counts = [len(l) for l in boxes_in_ys]
+
+
+def make_row_boxes():
+    inside = False
+    starts = []
+    stops = []
+
+    for y, n in enumerate(y_counts):
+        if n > 0 and not inside:
+            starts.append(y - 1)
+            inside = True
+        if n == 0 and inside:
+            stops.append(y)
+            inside = False
+
+    box_ys = list(zip(starts, stops))
+    row_boxes = [
+        Box(
+            lower_right_corner=Corner(x=max_x, y=stop),
+            lower_left_corner=Corner(x=0, y=stop),
+            upper_right_corner=Corner(x=max_x, y=start),
+            upper_left_corner=Corner(x=0, y=start),
+        )
+        for (start, stop) in box_ys
+    ]
+    return row_boxes
+
+
+def make_column_boxes():
+    inside = False
+    starts = []
+    stops = []
+
+    for x, n in enumerate(x_counts):
+        if n > 0 and not inside:
+            starts.append(x - 1)
+            inside = True
+        if n == 0 and inside:
+            stops.append(x)
+            inside = False
+
+    box_xs = list(zip(starts, stops))
+    column_boxes = [
+        Box(
+            lower_right_corner=Corner(y=max_y, x=stop),
+            lower_left_corner=Corner(y=0, x=stop),
+            upper_right_corner=Corner(y=max_y, x=start),
+            upper_left_corner=Corner(y=0, x=start),
+        )
+        for (start, stop) in box_xs
+    ]
+    return column_boxes
+
+
+row_boxes = make_row_boxes()
+column_boxes = make_column_boxes()
+
+number_of_rows = len(row_boxes)
+number_of_columns = len(column_boxes)
+
+print(f"{number_of_rows} rows, {number_of_columns} columns")
+
+
+def show_all_boxes_intersecting(filename, row_boxes, column_boxes):
+    for row_box in row_boxes:
+        for column_box in column_boxes:
+            show_image_with_word_boxes(filename, [row_box, column_box])
+
+
+"""
+import itertools
+
+def intertwine_lists(list1, list2):
+    return list(itertools.chain.from_iterable(zip(list1, list2)))
+"""
