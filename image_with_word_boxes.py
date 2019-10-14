@@ -1,9 +1,7 @@
 import io
 from dataclasses import dataclass
-from typing import Tuple
 
 import cv2
-import matplotlib.pyplot as plt
 from google.cloud import vision
 
 
@@ -77,6 +75,7 @@ def detect_text(image_path):
 
 def show_image_with_word_boxes(filename, boxes):
     image = cv2.imread(filename)
+    height, width, channels = image.shape
     color = (0, 0, 0)
     thickness = 2
     # skip first, large box with everything
@@ -101,6 +100,10 @@ def boxes_in_y(boxes, y):
 
 
 filename = "example.png"
+
+image = cv2.imread(filename)
+height, width, _ = image.shape
+
 boxes = detect_text(filename)[1:]
 
 max_x = max(box.max_x() for box in boxes)
@@ -109,6 +112,11 @@ x_counts = [len(boxes_in_x(boxes, x)) for x in range(max_x)]
 max_y = max(box.max_y() for box in boxes)
 boxes_in_ys = [boxes_in_y(boxes, y) for y in range(max_y)]
 y_counts = [len(l) for l in boxes_in_ys]
+
+print(f"height {height}, width {width}, max_x {max_x}, max_y {max_y}")
+
+max_x = width
+max_y = height
 
 
 def make_row_boxes():
@@ -123,6 +131,8 @@ def make_row_boxes():
         if n == 0 and inside:
             stops.append(y)
             inside = False
+    if inside:
+        stops.append(y)
 
     box_ys = list(zip(starts, stops))
     row_boxes = [
@@ -149,6 +159,8 @@ def make_column_boxes():
         if n == 0 and inside:
             stops.append(x)
             inside = False
+    if inside:
+        stops.append(x)
 
     box_xs = list(zip(starts, stops))
     column_boxes = [
@@ -177,6 +189,8 @@ def show_all_boxes_intersecting(filename, row_boxes, column_boxes):
         for column_box in column_boxes:
             show_image_with_word_boxes(filename, [row_box, column_box])
 
+
+show_all_boxes_intersecting(filename, row_boxes, column_boxes)
 
 """
 import itertools
