@@ -107,6 +107,14 @@ version = "0.4.1"
 
 [[package]]
 category = "main"
+description = "Print csv files in columnated format, either plain or as a Markdown or LaTeX table"
+name = "csvprint"
+optional = false
+python-versions = "*"
+version = "0.6.1"
+
+[[package]]
+category = "main"
 description = "Composable style cycles"
 name = "cycler"
 optional = false
@@ -135,7 +143,6 @@ version = "1.14.3"
 [package.dependencies]
 google-auth = ">=0.4.0,<2.0dev"
 googleapis-common-protos = ">=1.6.0,<2.0dev"
-grpcio = ">=1.8.2,<2.0dev"
 protobuf = ">=3.4.0"
 pytz = "*"
 requests = ">=2.18.0,<3.0.0dev"
@@ -443,6 +450,14 @@ version = "1.9.3"
 
 [[package]]
 category = "main"
+description = "Geometric objects, predicates, and operations"
+name = "shapely"
+optional = false
+python-versions = "*"
+version = "1.6.4.post2"
+
+[[package]]
+category = "main"
 description = "Python 2 and 3 compatibility utilities"
 name = "six"
 optional = false
@@ -487,7 +502,7 @@ python-versions = "*"
 version = "0.1.7"
 
 [metadata]
-content-hash = "6ac56d633ffce92586365933cfc4804166832e2c3ecc208ef07757a7e333500a"
+content-hash = "25d586d41b621cae7134a2a1589545c97975049ab085f2618168dcf3af7fb4d5"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -503,6 +518,7 @@ certifi = ["e4f3620cfea4f83eedc95b24abd9cd56f3c4b146dd0177e83a21b4eb49e21e50", "
 chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"]
 click = ["2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13", "5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7"]
 colorama = ["05eed71e2e327246ad6b38c540c4a3117230b19679b875190486ddd2d721422d", "f8ac84de7840f5b9c4e3347b3c1eaa50f7e49c2b07596221daec5edaabbd7c48"]
+csvprint = ["00a4b8198ee28ce0ecef87772ba10d52fbb1411e6b10f2180cd5ae8da050fa81", "3160dc4a9a0169ee80384ed041dd8a850ec857499346eb2f98b27f96e6f45972"]
 cycler = ["1d8a5ae1ff6c5cf9b93e8811e581232ad8920aeec647c37316ceac982b08cb2d", "cd7b2d1018258d7247a71425e9f26463dfb444d411c39569972f4ce586b0c9d8"]
 decorator = ["86156361c50488b84a3f148056ea716ca587df2f0de1d34750d35c21312725de", "f069f3a01830ca754ba5258fde2278454a0b5b79e0d7f5c13b3b97e57d4acff6"]
 google-api-core = ["b95895a9398026bc0500cf9b4a3f82c3f72c3f9150b26ff53af40c74e91c264a", "df8adc4b97f5ab4328a0e745bee77877cf4a7d4601cb1cd5959d2bbf8fba57aa"]
@@ -534,6 +550,7 @@ pytz = ["1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d", "b02
 requests = ["11e007a8a2aa0323f5a921e9e6a2d7e4e67d9877e85773fba9ba6419025cbeb4", "9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31"]
 rsa = ["14ba45700ff1ec9eeb206a2ce76b32814958a98e372006c8fb76ba820211be66", "1a836406405730121ae9823e19c6e806c62bbad73f890574fff50efa4122c487"]
 seed-isort-config = ["3e7c194d6322bfd15827640b85ddefbfcb205407530ebff5298700ae88d2397d", "6805a6567f30bb1b799c5c90d29789ea5b8bb6261f31ea745095ebc5eac6b027"]
+shapely = ["0378964902f89b8dbc332e5bdfa08e0bc2f7ab39fecaeb17fbb2a7699a44fe71", "34e7c6f41fb27906ccdf2514ee44a5774b90b39a256b6511a6a57d11ffe64999", "3ca69d4b12e2b05b549465822744b6a3a1095d8488cc27b2728a06d3c07d0eee", "3e9388f29bd81fcd4fa5c35125e1fbd4975ee36971a87a90c093f032d0e9de24", "3ef28e3f20a1c37f5b99ea8cf8dcb58e2f1a8762d65ed2d21fd92bf1d4811182", "523c94403047eb6cacd7fc1863ebef06e26c04d8a4e7f8f182d49cd206fe787e", "5d22a1a705c2f70f61ccadc696e33d922c1a92e00df8e1d58a6ade14dd7e3b4f", "714b6680215554731389a1bbdae4cec61741aa4726921fa2b2b96a6f578a2534", "7dfe1528650c3f0dc82f41a74cf4f72018288db9bfb75dcd08f6f04233ec7e78", "ba58b21b9cf3c33725f7f530febff9ed6a6846f9d0bf8a120fc74683ff919f89", "c4b87bb61fc3de59fc1f85e71a79b0c709dc68364d9584473697aad4aa13240f", "ebb4d2bee7fac3f6c891fcdafaa17f72ab9c6480f6d00de0b2dc9a5137dfe342"]
 six = ["3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c", "d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"]
 toml = ["229f81c57791a41d65e399fc06bf0848bab550a9dfd5ed66df18ce5f05e73d5c", "235682dd292d5899d361a811df37e04a8828a5b1da3115886b73cf81ebc9100e", "f1db651f9657708513243e61e6cc67d101a39bad662eaa9b5546f789338e07a3"]
 traitlets = ["70b4c6a1d9019d7b4f6846832288f86998aa3b9207c6821f3578a6a6a467fe44", "d023ee369ddd2763310e4c3eae1ff649689440d4ae59d7485eb4cfbbe3e359f7"]

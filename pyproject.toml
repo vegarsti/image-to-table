@@ -14,7 +14,7 @@ line_length=120                # corresponds to -w  flag
 multi_line_output=3            # corresponds to -m  flag
 include_trailing_comma=true    # corresponds to -tc flag
 skip_glob = '^((?!py$).)*$'    # isort all Python files
-known_third_party = ["cv2", "google"]
+known_third_party = ["cv2", "google", "matplotlib", "shapely"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -23,6 +23,8 @@ google-cloud-vision = "^0.39.0"
 matplotlib = "^3.1"
 grpcio = "^1.24"
 numpy = "^1.17"
+shapely = "^1.6"
+csvprint = "^0.6.1"
 
 [tool.poetry.dev-dependencies]
 ipython = "^7.8"
