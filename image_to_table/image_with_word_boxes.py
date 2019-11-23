@@ -3,7 +3,7 @@ import io
 import cv2
 from google.cloud import vision
 
-from models import Box, Point
+from image_to_table.models import Box, Point
 
 
 def detect_text(filename):
@@ -136,17 +136,9 @@ def extract_table_from_image(filename):
         new_row = []
         for column_box in column_boxes:
             row_column = []
-            for original_box in original_boxes:
+            for i, original_box in enumerate(original_boxes):
                 if original_box.is_inside_box(column_box) and original_box.is_inside_box(row_box):
                     row_column.append(original_box.text)
             new_row.append(" ".join(row_column))
         table.append(new_row)
     return table
-
-
-if __name__ == "__main__":
-    filename = "example.png"
-    table = extract_table_from_image(filename)
-
-    for row in table:
-        print(",".join(row))
