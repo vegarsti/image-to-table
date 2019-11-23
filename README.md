@@ -18,3 +18,6 @@ eval "$(pyenv init -)"
 ## Running
 
 `poetry run python image_with_word_boxes.py` shows the example image (using OpenCV) with bounding boxes around each word.
+
+Service account:
+- `export GOOGLE_APPLICATION_CREDENTIALS="service-account.json"`
