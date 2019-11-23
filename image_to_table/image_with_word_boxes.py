@@ -1,4 +1,5 @@
 import io
+from concurrent.futures import ThreadPoolExecutor
 
 import cv2
 from google.cloud import vision
@@ -121,6 +122,19 @@ def show_all_boxes_intersecting(filename, row_boxes, column_boxes):
             show_image_with_word_boxes(filename, [row_box, column_box])
 
 
+def get_row(row_box, column_boxes, original_boxes):
+    new_row = [get_cell_in_row(column_box, original_boxes, row_box) for column_box in column_boxes]
+    return new_row
+
+
+def get_cell_in_row(column_box, original_boxes, row_box):
+    row_column = []
+    for i, original_box in enumerate(original_boxes):
+        if original_box.is_inside_box(column_box) and original_box.is_inside_box(row_box):
+            row_column.append(original_box.text)
+    return " ".join(row_column)
+
+
 def extract_table_from_image(filename):
     image = cv2.imread(filename)
     height, width, _ = image.shape
@@ -131,14 +145,7 @@ def extract_table_from_image(filename):
     y_counts = [len(l) for l in boxes_in_ys]
     row_boxes = make_row_boxes(y_counts, width)
     column_boxes = make_column_boxes(x_counts, height)
-    table = []
-    for row_box in row_boxes:
-        new_row = []
-        for column_box in column_boxes:
-            row_column = []
-            for i, original_box in enumerate(original_boxes):
-                if original_box.is_inside_box(column_box) and original_box.is_inside_box(row_box):
-                    row_column.append(original_box.text)
-            new_row.append(" ".join(row_column))
-        table.append(new_row)
+
+    table = [get_row(row_box, column_boxes, original_boxes) for row_box in row_boxes]
+
     return table
