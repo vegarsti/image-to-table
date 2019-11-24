@@ -1,7 +1,7 @@
 import io
-from concurrent.futures import ThreadPoolExecutor
 
 import cv2
+import matplotlib.pyplot as plt
 from google.cloud import vision
 
 from image_to_table.models import Box, Point
@@ -19,25 +19,10 @@ def detect_text(filename):
     return word_boxes
 
 
-def from_vision_object(text):
-    lower_left_corner, lower_right_corner, upper_right_corner, upper_left_corner = [
-        Point(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices
-    ]
-    box = Box(
-        text=text.description,
-        lower_left_corner=lower_left_corner,
-        lower_right_corner=lower_right_corner,
-        upper_left_corner=upper_left_corner,
-        upper_right_corner=upper_right_corner,
-    )
-    return box
-
-
 def show_image_with_word_boxes(filename, boxes=None):
     image = cv2.imread(filename)
     color = (0, 0, 0)
     thickness = 2
-    # skip first, large box with everything
     if boxes is None:
         boxes = []
     for box in boxes:
@@ -47,7 +32,8 @@ def show_image_with_word_boxes(filename, boxes=None):
     cv2.imshow("table", image)
     while True:
         key = cv2.waitKey(0)
-        if key == 27:  # ESC key to break
+        key_is_esc = key == 27
+        if key_is_esc:
             break
     cv2.destroyAllWindows()
 
@@ -140,11 +126,20 @@ def extract_table_from_image(filename):
     height, width, _ = image.shape
     original_boxes = detect_text(filename)
     boxes = original_boxes
+    for box in original_boxes:
+        box.fill("black")
     x_counts = [len(boxes_in_x(boxes, x)) for x in range(width)]
     boxes_in_ys = [boxes_in_y(boxes, y) for y in range(height)]
     y_counts = [len(l) for l in boxes_in_ys]
     row_boxes = make_row_boxes(y_counts, width)
     column_boxes = make_column_boxes(x_counts, height)
+    """
+    for box in row_boxes + column_boxes:
+        box.plot(color="black")
+    """
+    plt.axis("off")
+    plt.savefig("table_b.png")
+    plt.show()
 
     table = [get_row(row_box, column_boxes, original_boxes) for row_box in row_boxes]
 

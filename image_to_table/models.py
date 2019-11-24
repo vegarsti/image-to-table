@@ -92,6 +92,13 @@ class Box:
         x, y = self.as_polygon().exterior.xy
         plt.plot(x, y, color=color)
 
+    def fill(self, color=None):
+        x, y = self.as_polygon().exterior.xy
+        if color is not None:
+            plt.fill(x, y, color=color)
+        else:
+            plt.fill(x, y)
+
     @staticmethod
     def from_vision_object(text):
         lower_left_corner, lower_right_corner, upper_right_corner, upper_left_corner = [
