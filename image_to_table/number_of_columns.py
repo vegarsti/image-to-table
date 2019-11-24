@@ -6,7 +6,6 @@ import numpy as np
 import opencv_wrapper as cvw
 import scipy.ndimage as snd
 
-plt.set_cmap("gray")
 
 
 def find_columns(path):
