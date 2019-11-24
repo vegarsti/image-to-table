@@ -59,3 +59,27 @@ def find_number_of_columns(path, show=False, show1=False):
     num_changes = np.count_nonzero(diffed)
     num_columns = (num_changes + 2) // 2
     return num_columns
+
+
+def find_column_placement(sum_image, num_columns):
+    thresh_sum = cvw.threshold_binary(sum_image, 1)
+
+    if len(thresh_sum.shape) > 1:
+        thresh_sum = thresh_sum[0]
+
+    first_white = np.argmax(thresh_sum)
+    last_white = thresh_sum.shape[0] - np.argmax(thresh_sum[:-1])
+    thresh_sum = thresh_sum[first_white:last_white]
+
+    is_zero = np.where(thresh_sum == 0)[0]
+    consec = sorted(consecutive(is_zero), key=len)
+
+    while len(consec) + 1 > num_columns:
+        thresh_sum[consec.pop(0)] = 255
+
+    return list(map(lambda x: first_white + x[-1], consec))
+
+
+# https://stackoverflow.com/questions/7352684/how-to-find-the-groups-of-consecutive-elements-from-an-array-in-numpy
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)
