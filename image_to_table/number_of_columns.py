@@ -1,61 +1,71 @@
-import base64
-
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 import opencv_wrapper as cvw
 import scipy.ndimage as snd
 
 
-def image_as_b64(path):
-    with open(path, "rb") as image:
-        return base64.b64encode(image.read())
-
-
-def find_number_of_columns(path, show=False, show1=False):
+def find_columns(path):
     image = cv2.imread(path)
-    try:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    except:
-        gray = image
-    otsu = cvw.threshold_otsu(gray)
-    x_axis_sum = np.sum(otsu, axis=0)
-    sum_image_height = 50
-    sum_image = np.zeros((sum_image_height, *x_axis_sum.shape))
-    sum_image[:] = x_axis_sum
-    cv2.normalize(sum_image, sum_image, 0, 255, cv2.NORM_MINMAX)
-    sum_image = sum_image.astype(np.uint8)
-    # sum_image = cvw.normalize(sum_image).astype(np.uint8)
-    sum_image = cv2.resize(sum_image, (400, 50), interpolation=cv2.INTER_CUBIC)
-    # sum_image = cvw.resize(sum_image, shape=(50, 400)) # Kommer snart :)
+    gray = cvw.bgr2gray(image)
+    otsu = cvw.threshold_otsu(gray, inverse=True)
 
-    if show:
-        plt.figure()
-        plt.imshow(sum_image)
+    x_axis_sum = np.sum(otsu, axis=0).astype(np.float64)
+    # Expand to 2-D for image operations
+    x_axis_sum_2d = np.expand_dims(x_axis_sum, axis=0)
+    x_axis_sum_2d = cvw.normalize(x_axis_sum_2d).astype(np.uint8)
 
-    eroded = snd.grey_opening(sum_image, 11)
+    num_columns = find_number_of_columns(x_axis_sum_2d)
+    column_placement = find_column_placement(x_axis_sum_2d, num_columns)
 
-    if show:
-        plt.figure()
-        plt.imshow(eroded)
+    return num_columns, column_placement
 
-    _, otsu = cv2.threshold(eroded, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    # otsu = cvw.threshold_otsu(eroded)
-    dilated_otsu = otsu  # cv2.dilate(otsu, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3)))
-    # otsu = cvw.dilate(otsu, 3)
-    # eroded = cv.erode(otsu, cv.getStructuringElement(cv.MORPH_RECT, (35, 35)))
-    if show1:
-        fig, (ax1, ax2) = plt.subplots(1, 2)
-        ax1.imshow(gray)
-        ax2.imshow(dilated_otsu)
-        plt.show()
-    dilated = dilated_otsu
-    dilated = dilated[0]
-    first_black = np.argmin(dilated)
-    last_black = dilated.shape[0] - np.argmin(dilated[::-1])
-    # clip
-    dilated = dilated[first_black:last_black]
-    diffed = np.diff(dilated)
+
+def overlay(image, column_placement):
+    """Visualizing function"""
+    new_image = image.copy()
+    new_image[:, column_placement] = 0
+    return new_image
+
+
+def find_number_of_columns(sum_image):
+    eroded = snd.grey_closing(sum_image, 11)
+    otsu = cvw.threshold_otsu(eroded)
+    dilated_otsu = cvw.dilate(otsu, 3)
+
+    dilated = dilated_otsu[0]  # 1-D
+    clipped, *_ = clip(dilated)
+    diffed = np.diff(clipped)
     num_changes = np.count_nonzero(diffed)
     num_columns = (num_changes + 2) // 2
+
     return num_columns
+
+
+def clip(image):
+    first_white = np.argmax(image)
+    last_white = image.shape[0] - np.argmax(image[::-1])
+    image = image[first_white:last_white]
+
+    return image, first_white, last_white
+
+
+def find_column_placement(sum_image, num_columns):
+    thresh_sum = cvw.threshold_binary(sum_image, 1)
+    thresh_sum = thresh_sum[0]  # 1-D
+    clipped, first_white, _ = clip(thresh_sum)
+    is_zero = np.where(clipped == 0)[0]
+    column_breaks = sorted(consecutive(is_zero), key=len)
+
+    merge_columns_until_limit(clipped, column_breaks, num_columns)
+
+    return list(map(lambda x: first_white + x[-1], column_breaks))
+
+
+def merge_columns_until_limit(image, column_breaks, limit):
+    while len(column_breaks) + 1 > limit:
+        image[column_breaks.pop(0)] = 255
+
+
+# https://stackoverflow.com/questions/7352684/how-to-find-the-groups-of-consecutive-elements-from-an-array-in-numpy
+def consecutive(data, stepsize=1):
+    return np.split(data, np.where(np.diff(data) != stepsize)[0] + 1)

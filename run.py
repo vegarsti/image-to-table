@@ -7,5 +7,6 @@ if __name__ == "__main__":
     for row in table:
         print(",".join(row))
     """
-    filename = "table_b.png"
-    print(number_of_columns.find_number_of_columns(filename))
+    filename = "images/example.png"
+    num_cols, placement = number_of_columns.find_columns(filename)
+    print(num_cols, placement)
