@@ -17,7 +17,7 @@ def find_columns(path):
     num_columns = find_number_of_columns(x_axis_sum_2d)
     column_placement = find_column_placement(x_axis_sum_2d, num_columns)
 
-    return num_columns, column_placement
+    return column_placement
 
 
 def overlay(image, column_placement):

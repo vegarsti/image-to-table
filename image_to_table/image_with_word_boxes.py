@@ -1,11 +1,9 @@
 import io
-from typing import List
-import itertools
+from typing import List, Iterable
 import bisect
 
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 from google.cloud import vision
 
 from image_to_table.models import TextBox
@@ -20,7 +18,7 @@ def create_text_box(text) -> TextBox:
     return text_box
 
 
-def detect_text(filename: str) -> List[TextBox]:
+def detect_text(filename: str) -> Iterable[TextBox]:
     client = vision.ImageAnnotatorClient()
     with io.open(filename, "rb") as image_file:
         content = image_file.read()
@@ -39,7 +37,7 @@ def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
     return TextBox(description, bounding_rect)
 
 
-def extract_table_from_image(filename: str, num_columns: int, placement: List[int]) -> List[List[TextBox]]:
+def extract_table_from_image(filename: str, placement: List[int]) -> List[List[TextBox]]:
     image = cv2.imread(filename)
     height, width, _ = image.shape
     original_boxes = detect_text(filename)
