@@ -6,7 +6,7 @@ if __name__ == "__main__":
     num_cols, placement = number_of_columns.find_columns(filename)
     print(num_cols, placement)
 
-    table = image_with_word_boxes.new_extract_table_from_image(filename, num_cols, placement)
+    table = image_with_word_boxes.extract_table_from_image(filename, num_cols, placement)
 
     for row in table:
         print(",".join(row))
