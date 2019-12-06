@@ -9,4 +9,4 @@ if __name__ == "__main__":
     table = image_with_word_boxes.extract_table_from_image(filename, num_cols, placement)
 
     for row in table:
-        print(",".join(row))
+        print(",".join(map(lambda x: x.text, row)))

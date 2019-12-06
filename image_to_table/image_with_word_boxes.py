@@ -39,7 +39,7 @@ def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
     return TextBox(description, bounding_rect)
 
 
-def extract_table_from_image(filename: str, num_columns: int, placement: List[int]) -> List[List[str]]:
+def extract_table_from_image(filename: str, num_columns: int, placement: List[int]) -> List[List[TextBox]]:
     image = cv2.imread(filename)
     height, width, _ = image.shape
     original_boxes = detect_text(filename)
@@ -49,10 +49,7 @@ def extract_table_from_image(filename: str, num_columns: int, placement: List[in
     sorted_boxes = sorted(boxes, key=lambda box: box.rect.y)
 
     rows = merge_into_rows(sorted_boxes)
-    table = separate_into_columns(rows, placement)
-
-    for i in range(len(table)):
-        table[i] = list(map(lambda x: x.text, (merge_sorted_text_boxes(col) for col in table[i])))
+    table = merge_into_columns(rows, placement)
 
     return table
 
@@ -73,7 +70,7 @@ def merge_into_rows(boxes: List[TextBox], max_distance: int = 5) -> List[List[Te
     return rows
 
 
-def separate_into_columns(rows: List[List[TextBox]], placements: List[int]):
+def merge_into_columns(rows: List[List[TextBox]], placements: List[int]) -> List[List[TextBox]]:
     bulks = []
     for row in rows:
         bulk = []
@@ -83,11 +80,10 @@ def separate_into_columns(rows: List[List[TextBox]], placements: List[int]):
         last_index = 0
         for placement in placements:
             index = bisect.bisect_left(tr_xs, placement, lo=last_index)
-            bulk.append(row[last_index:index])
-
+            bulk.append(merge_sorted_text_boxes(row[last_index:index]))
             last_index = index
 
-        bulk.append(row[last_index:])
+        bulk.append(merge_sorted_text_boxes(row[last_index:]))
         bulks.append(bulk)
 
     return bulks
