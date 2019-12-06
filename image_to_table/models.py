@@ -2,15 +2,7 @@ from dataclasses import dataclass
 
 from matplotlib import pyplot as plt
 from shapely import geometry
-
-
-@dataclass
-class Point:
-    x: int
-    y: int
-
-    def as_tuple(self):
-        return self.x, self.y
+from opencv_wrapper import Point
 
 
 @dataclass
