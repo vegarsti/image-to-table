@@ -57,25 +57,18 @@ def extract_table_from_image(filename: str, num_columns: int, placement: List[in
     return table
 
 
+def merge_into_rows(boxes: List[TextBox], max_distance: int = 5) -> List[List[TextBox]]:
+    """Merges text boxes with similar heights into rows
 
-def separate_into_rows(sorted_boxes):
-    boxes = sorted_boxes
+    :param max_distance: Maximum height difference between rows to be considered the same row.
+    """
+    ys = np.asarray(list(map(lambda x: x.rect.y, boxes)))
+    diffs = np.diff(ys)
+    indices = np.where(diffs > max_distance)[0] + 1
 
-    group_counts = []
-    groups = []
-
-    for group_count, group in itertools.groupby(boxes, key=lambda x: x.rect.y):
-        group_counts.append(group_count)
-        groups.append(list(group))
-
-    diffs = np.diff(group_counts)
-    rows = [groups[0]]
-    row_idx = 0
-    for i, diff in enumerate(diffs > 5, start=1):
-        if diff:
-            row_idx += 1
-            rows.append([])
-        rows[row_idx] += groups[i]
+    rows = [boxes[: indices[0]]]
+    for i in range(len(indices) - 1):
+        rows.append(boxes[indices[i] : indices[i + 1]])
 
     return rows
 
