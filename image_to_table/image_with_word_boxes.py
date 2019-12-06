@@ -1,13 +1,38 @@
 import io
+from typing import List
+import itertools
+import bisect
 
+import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from google.cloud import vision
 
-from image_to_table.models import Box, Point
+from image_to_table.models import Box, TextBox
+from opencv_wrapper import Point, Rect
 
 
-def detect_text(filename):
+def create_text_box(text) -> TextBox:
+    tl, tr, br, bl = (Point(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices)
+    rect = Rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y)
+    text_box = TextBox(text.description, rect)
+
+    return text_box
+
+
+def detect_text(filename) -> List[TextBox]:
+    client = vision.ImageAnnotatorClient()
+    with io.open(filename, "rb") as image_file:
+        content = image_file.read()
+    image = vision.types.Image(content=content)
+    response = client.text_detection(image=image)
+    texts = response.text_annotations
+    boxes = map(create_text_box, texts)
+    bounding_box, *word_boxes = boxes
+    return word_boxes
+
+
+def detect_text_old(filename):
     client = vision.ImageAnnotatorClient()
     with io.open(filename, "rb") as image_file:
         content = image_file.read()
@@ -121,10 +146,81 @@ def get_cell_in_row(column_box, original_boxes, row_box):
     return " ".join(row_column)
 
 
-def extract_table_from_image(filename):
+def merge_sorted_text_boxes(boxes: List[TextBox]):
+    bounding_rect = boxes[0].rect or boxes[-1].rect
+    description = " ".join(map(lambda x: x.text, boxes))
+
+    return TextBox(description, bounding_rect)
+
+
+def new_extract_table_from_image(filename, num_columns, placement):
     image = cv2.imread(filename)
     height, width, _ = image.shape
     original_boxes = detect_text(filename)
+    boxes = original_boxes
+
+    # Sort boxes by row
+    sorted_boxes = sorted(boxes, key=lambda box: box.rect.y)
+
+    rows = separate_into_rows(sorted_boxes)
+    grid = separate_into_columns(rows, num_columns, placement)
+
+    csv = []
+
+    for row in grid:
+        csv.append(",".join(map(lambda x: x.text, (merge_sorted_text_boxes(col) for col in row))))
+
+    import pprint
+
+    pprint.pprint(csv)
+
+
+def separate_into_rows(sorted_boxes):
+    boxes = sorted_boxes
+
+    group_counts = []
+    groups = []
+
+    for group_count, group in itertools.groupby(boxes, key=lambda x: x.rect.y):
+        group_counts.append(group_count)
+        groups.append(list(group))
+
+    diffs = np.diff(group_counts)
+    rows = [groups[0]]
+    row_idx = 0
+    for i, diff in enumerate(diffs > 5, start=1):
+        if diff:
+            row_idx += 1
+            rows.append([])
+        rows[row_idx] += groups[i]
+
+    return rows
+
+
+def separate_into_columns(rows: List[List[TextBox]], num_columns: int, placements: List[int]):
+    bulks = []
+    for row in rows:
+        bulk = []
+        row = sorted(row, key=lambda x: x.rect.tl.x)
+        tr_xs = list(map(lambda x: x.rect.tr.x, row))
+
+        last_index = 0
+        for placement in placements:
+            index = bisect.bisect_left(tr_xs, placement, lo=last_index)
+            bulk.append(row[last_index:index])
+
+            last_index = index
+
+        bulk.append(row[last_index:])
+        bulks.append(bulk)
+
+    return bulks
+
+
+def extract_table_from_image(filename):
+    image = cv2.imread(filename)
+    height, width, _ = image.shape
+    original_boxes = detect_text_old(filename)
     boxes = original_boxes
     for box in original_boxes:
         box.fill("black")

@@ -2,7 +2,13 @@ from dataclasses import dataclass
 
 from matplotlib import pyplot as plt
 from shapely import geometry
-from opencv_wrapper import Point
+from opencv_wrapper import Point, Rect
+
+
+@dataclass
+class TextBox:
+    text: str
+    rect: Rect
 
 
 @dataclass
@@ -93,14 +99,12 @@ class Box:
 
     @staticmethod
     def from_vision_object(text):
-        lower_left_corner, lower_right_corner, upper_right_corner, upper_left_corner = [
-            Point(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices
-        ]
+        tl, tr, br, bl = (Point(vertex.x, vertex.y) for vertex in text.bounding_poly.vertices)
         box = Box(
             text=text.description,
-            lower_left_corner=lower_left_corner,
-            lower_right_corner=lower_right_corner,
-            upper_left_corner=upper_left_corner,
-            upper_right_corner=upper_right_corner,
+            lower_left_corner=bl,
+            lower_right_corner=br,
+            upper_left_corner=tl,
+            upper_right_corner=tr,
         )
         return box
