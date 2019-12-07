@@ -12,7 +12,7 @@
 eval "$(pyenv init -)"
 ```
 
-- Install poetry for Python package management
+- Install [Poetry](https://github.com/sdispater/poetry) for Python package management
 - In this repo, do `poetry install`
 
 ## Running
