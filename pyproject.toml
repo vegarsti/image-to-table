@@ -14,7 +14,7 @@ line_length=120                # corresponds to -w  flag
 multi_line_output=3            # corresponds to -m  flag
 include_trailing_comma=true    # corresponds to -tc flag
 skip_glob = '^((?!py$).)*$'    # isort all Python files
-known_third_party = ["cv2", "flask", "google", "matplotlib", "numpy", "opencv_wrapper", "pytest", "scipy", "shapely", "werkzeug"]
+known_third_party = ["cv2", "flask", "google", "numpy", "opencv_wrapper", "pytest", "scipy", "werkzeug"]
 
 [tool.poetry.dependencies]
 python = "^3.7"

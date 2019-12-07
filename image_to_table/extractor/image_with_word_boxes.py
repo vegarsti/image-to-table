@@ -1,13 +1,12 @@
-import io
-from typing import List, Iterable
 import bisect
+from typing import Iterable, List
 
-import numpy as np
 import cv2
+import numpy as np
 from google.cloud import vision
-
-from image_to_table.models import TextBox
 from opencv_wrapper import Rect
+
+from image_to_table.extractor.models import TextBox
 
 
 def create_text_box(text) -> TextBox:
@@ -18,10 +17,8 @@ def create_text_box(text) -> TextBox:
     return text_box
 
 
-def detect_text(filename: str) -> Iterable[TextBox]:
+def detect_text(content: bytes) -> Iterable[TextBox]:
     client = vision.ImageAnnotatorClient()
-    with io.open(filename, "rb") as image_file:
-        content = image_file.read()
     image = vision.types.Image(content=content)
     response = client.text_detection(image=image)
     _summary, *texts = response.text_annotations
@@ -37,14 +34,12 @@ def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
     return TextBox(description, bounding_rect)
 
 
-def extract_table_from_image(filename: str, placement: List[int]) -> List[List[TextBox]]:
-    image = cv2.imread(filename)
+def extract_table_from_image(content: bytes, placement: List[int]) -> List[List[TextBox]]:
+    image = cv2.imdecode(np.frombuffer(content, np.uint8), 1)
     height, width, _ = image.shape
-    original_boxes = detect_text(filename)
+    original_boxes = detect_text(content=content)
     boxes = original_boxes
-
     boxes_sorted_by_height = sorted(boxes, key=lambda box: box.rect.y)
-
     rows = merge_into_rows(boxes_sorted_by_height)
     table = merge_into_columns(rows, placement)
 
@@ -54,6 +49,7 @@ def extract_table_from_image(filename: str, placement: List[int]) -> List[List[T
 def merge_into_rows(boxes: List[TextBox], max_distance: int = 5) -> List[List[TextBox]]:
     """Merges text boxes with similar heights into rows
 
+    :param boxes: List of text boxes comprising a row
     :param max_distance: Maximum height difference between rows to be considered the same row.
     """
     ys = np.asarray(list(map(lambda x: x.rect.y, boxes)))
