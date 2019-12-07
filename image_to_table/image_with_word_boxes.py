@@ -1,146 +1,86 @@
 import io
+from typing import List, Iterable
+import bisect
 
+import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 from google.cloud import vision
 
-from image_to_table.models import Box, Point
+from image_to_table.models import TextBox
+from opencv_wrapper import Rect
 
 
-def detect_text(filename):
+def create_text_box(text) -> TextBox:
+    tl, tr, br, bl = text.bounding_poly.vertices
+    rect = Rect(tl.x, tl.y, br.x - tl.x, br.y - tl.y)
+    text_box = TextBox(text.description, rect)
+
+    return text_box
+
+
+def detect_text(filename: str) -> Iterable[TextBox]:
     client = vision.ImageAnnotatorClient()
     with io.open(filename, "rb") as image_file:
         content = image_file.read()
     image = vision.types.Image(content=content)
     response = client.text_detection(image=image)
-    texts = response.text_annotations
-    boxes = [Box.from_vision_object(text) for text in texts]
-    bounding_box, *word_boxes = boxes
-    return word_boxes
+    _summary, *texts = response.text_annotations
+    boxes = map(create_text_box, texts)
+
+    return boxes
 
 
-def show_image_with_word_boxes(filename, boxes=None):
-    image = cv2.imread(filename)
-    color = (0, 0, 0)
-    thickness = 2
-    if boxes is None:
-        boxes = []
-    for box in boxes:
-        image = cv2.rectangle(
-            image, box.lower_left_corner.as_tuple(), box.upper_right_corner.as_tuple(), color, thickness
-        )
-    cv2.imshow("table", image)
-    while True:
-        key = cv2.waitKey(0)
-        key_is_esc = key == 27
-        if key_is_esc:
-            break
-    cv2.destroyAllWindows()
+def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
+    bounding_rect = boxes[0].rect or boxes[-1].rect
+    description = " ".join(x.text for x in boxes)
+
+    return TextBox(description, bounding_rect)
 
 
-def boxes_in_x(boxes, x):
-    return [box for box in boxes if box.x_inside(x)]
-
-
-def boxes_in_y(boxes, y):
-    return [box for box in boxes if box.y_inside(y)]
-
-
-def make_row_boxes(y_counts, max_x):
-    inside = False
-    starts = []
-    stops = []
-
-    for y, n in enumerate(y_counts):
-        if n > 0 and not inside:
-            starts.append(y - 1)
-            inside = True
-        if n == 0 and inside:
-            stops.append(y)
-            inside = False
-    if inside:
-        stops.append(y)
-
-    box_ys = list(zip(starts, stops))
-    row_boxes = [
-        Box(
-            lower_right_corner=Point(x=max_x, y=stop),
-            lower_left_corner=Point(x=0, y=stop),
-            upper_right_corner=Point(x=max_x, y=start),
-            upper_left_corner=Point(x=0, y=start),
-        )
-        for (start, stop) in box_ys
-    ]
-    return row_boxes
-
-
-def make_column_boxes(x_counts, max_y):
-    inside = False
-    starts = []
-    stops = []
-
-    for x, n in enumerate(x_counts):
-        if n > 0 and not inside:
-            starts.append(x - 1)
-            inside = True
-        if n == 0 and inside:
-            stops.append(x)
-            inside = False
-    if inside:
-        stops.append(x)
-
-    box_xs = list(zip(starts, stops))
-    column_boxes = [
-        Box(
-            lower_right_corner=Point(y=max_y, x=stop),
-            lower_left_corner=Point(y=0, x=stop),
-            upper_right_corner=Point(y=max_y, x=start),
-            upper_left_corner=Point(y=0, x=start),
-        )
-        for (start, stop) in box_xs
-    ]
-    return column_boxes
-
-
-def show_all_boxes_intersecting(filename, row_boxes, column_boxes):
-    for row_box in row_boxes:
-        for column_box in column_boxes:
-            show_image_with_word_boxes(filename, [row_box, column_box])
-
-
-def get_row(row_box, column_boxes, original_boxes):
-    new_row = [get_cell_in_row(column_box, original_boxes, row_box) for column_box in column_boxes]
-    return new_row
-
-
-def get_cell_in_row(column_box, original_boxes, row_box):
-    row_column = []
-    for i, original_box in enumerate(original_boxes):
-        if original_box.is_inside_box(column_box) and original_box.is_inside_box(row_box):
-            row_column.append(original_box.text)
-    return " ".join(row_column)
-
-
-def extract_table_from_image(filename):
+def extract_table_from_image(filename: str, placement: List[int]) -> List[List[TextBox]]:
     image = cv2.imread(filename)
     height, width, _ = image.shape
     original_boxes = detect_text(filename)
     boxes = original_boxes
-    for box in original_boxes:
-        box.fill("black")
-    x_counts = [len(boxes_in_x(boxes, x)) for x in range(width)]
-    boxes_in_ys = [boxes_in_y(boxes, y) for y in range(height)]
-    y_counts = [len(l) for l in boxes_in_ys]
-    row_boxes = make_row_boxes(y_counts, width)
-    column_boxes = make_column_boxes(x_counts, height)
-    """
-    for box in row_boxes + column_boxes:
-        box.plot(color="black")
-    """
-    plt.axis("off")
-    plt.savefig("table_b.png")
-    plt.show()
 
-    table = [get_row(row_box, column_boxes, original_boxes) for row_box in row_boxes]
+    boxes_sorted_by_height = sorted(boxes, key=lambda box: box.rect.y)
+
+    rows = merge_into_rows(boxes_sorted_by_height)
+    table = merge_into_columns(rows, placement)
 
     return table
+
+
+def merge_into_rows(boxes: List[TextBox], max_distance: int = 5) -> List[List[TextBox]]:
+    """Merges text boxes with similar heights into rows
+
+    :param max_distance: Maximum height difference between rows to be considered the same row.
+    """
+    ys = np.asarray(list(map(lambda x: x.rect.y, boxes)))
+    diffs = np.diff(ys)
+    indices = np.where(diffs > max_distance)[0] + 1
+
+    rows = [boxes[: indices[0]]]
+    for i in range(len(indices) - 1):
+        rows.append(boxes[indices[i] : indices[i + 1]])
+
+    return rows
+
+
+def merge_into_columns(rows: List[List[TextBox]], placements: List[int]) -> List[List[TextBox]]:
+    bulks = []
+    for row in rows:
+        bulk = []
+        row = sorted(row, key=lambda x: x.rect.tl.x)
+        top_right_xs = list(map(lambda x: x.rect.tr.x, row))
+
+        last_index = 0
+        for placement in placements:
+            index = bisect.bisect_left(top_right_xs, placement, lo=last_index)
+            bulk.append(merge_sorted_text_boxes(row[last_index:index]))
+            last_index = index
+
+        bulk.append(merge_sorted_text_boxes(row[last_index:]))
+        bulks.append(bulk)
+
+    return bulks
