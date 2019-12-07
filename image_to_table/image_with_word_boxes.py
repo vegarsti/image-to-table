@@ -32,7 +32,7 @@ def detect_text(filename: str) -> Iterable[TextBox]:
 
 def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
     bounding_rect = boxes[0].rect or boxes[-1].rect
-    description = " ".join(map(lambda x: x.text, boxes))
+    description = " ".join(x.text for x in boxes)
 
     return TextBox(description, bounding_rect)
 
@@ -43,10 +43,9 @@ def extract_table_from_image(filename: str, placement: List[int]) -> List[List[T
     original_boxes = detect_text(filename)
     boxes = original_boxes
 
-    # Sort boxes by row
-    sorted_boxes = sorted(boxes, key=lambda box: box.rect.y)
+    boxes_sorted_by_height = sorted(boxes, key=lambda box: box.rect.y)
 
-    rows = merge_into_rows(sorted_boxes)
+    rows = merge_into_rows(boxes_sorted_by_height)
     table = merge_into_columns(rows, placement)
 
     return table
@@ -73,11 +72,11 @@ def merge_into_columns(rows: List[List[TextBox]], placements: List[int]) -> List
     for row in rows:
         bulk = []
         row = sorted(row, key=lambda x: x.rect.tl.x)
-        tr_xs = list(map(lambda x: x.rect.tr.x, row))
+        top_right_xs = list(map(lambda x: x.rect.tr.x, row))
 
         last_index = 0
         for placement in placements:
-            index = bisect.bisect_left(tr_xs, placement, lo=last_index)
+            index = bisect.bisect_left(top_right_xs, placement, lo=last_index)
             bulk.append(merge_sorted_text_boxes(row[last_index:index]))
             last_index = index
 
