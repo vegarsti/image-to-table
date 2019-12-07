@@ -1,1 +1,1 @@
-curl -i -X POST localhost:5000/ -H 'content-type: image/png' --data '@images/example.png'
+curl -i -X POST localhost:5000/api -H 'content-type: image/png' --data-binary '@images/example.png'
