@@ -2,14 +2,14 @@ from http import HTTPStatus
 
 from flask import Flask, Response, make_response, request
 
-from image_to_table.extractor.main import get_table
+from image_to_table.extractor.image_with_word_boxes import extract_table_from_image
 from image_to_table.server.app.exceptions import InvalidData
 
 
 def api() -> Response:
     if request.content_type != "image/png":
         raise InvalidData
-    rows = get_table(image=request.data)
+    rows = extract_table_from_image(content=request.data)
     return make_response(
         {
             "image_size": request.content_length,

@@ -6,6 +6,7 @@ import numpy as np
 from google.cloud import vision
 from opencv_wrapper import Rect
 
+from image_to_table.extractor import number_of_columns
 from image_to_table.extractor.models import TextBox
 
 
@@ -34,16 +35,17 @@ def merge_sorted_text_boxes(boxes: List[TextBox]) -> TextBox:
     return TextBox(description, bounding_rect)
 
 
-def extract_table_from_image(content: bytes, placement: List[int]) -> List[List[TextBox]]:
+def extract_table_from_image(content: bytes) -> List[List[str]]:
     image = cv2.imdecode(np.frombuffer(content, np.uint8), 1)
     height, width, _ = image.shape
-    original_boxes = detect_text(content=content)
-    boxes = original_boxes
+    boxes = detect_text(content=content)
+    placement = number_of_columns.find_columns(content=content)
     boxes_sorted_by_height = sorted(boxes, key=lambda box: box.rect.y)
     rows = merge_into_rows(boxes_sorted_by_height)
-    table = merge_into_columns(rows, placement)
+    rows_boxes = merge_into_columns(rows, placement)
+    rows_strings = [[cell.text for cell in row] for row in rows_boxes]
 
-    return table
+    return rows_strings
 
 
 def merge_into_rows(boxes: List[TextBox], max_distance: int = 5) -> List[List[TextBox]]:
