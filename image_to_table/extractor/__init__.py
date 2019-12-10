@@ -1,0 +1,1 @@
+from image_to_table.extractor.image_with_word_boxes import extract_table_from_image
