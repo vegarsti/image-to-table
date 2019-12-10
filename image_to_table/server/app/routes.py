@@ -2,7 +2,7 @@ from http import HTTPStatus
 
 from flask import Flask, Response, make_response, request
 
-from image_to_table.extractor.image_with_word_boxes import extract_table_from_image
+from image_to_table.extractor import extract_table_from_image
 from image_to_table.server.app.exceptions import InvalidData
 
 

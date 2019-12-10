@@ -14,7 +14,6 @@ def image() -> bytes:
 
 class TestServer:
     def test_ok(self, test_client: FlaskClient, image: bytes) -> None:
-        x = type(test_client)
         response = test_client.post("/api", content_type="image/png", data=image)
         expected_response = {"image_size": len(image)}
         assert response.status_code == HTTPStatus.OK

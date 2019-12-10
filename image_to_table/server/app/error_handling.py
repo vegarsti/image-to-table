@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from logging import log
 
 import werkzeug.exceptions
 from flask import Flask, Response, make_response
@@ -15,5 +16,6 @@ def register_error_handlers(app: Flask) -> None:
 
 
 def _make_error(message: str, code: int) -> Response:
+    log(level=1, msg=message)
     error = {"error": {"message": message, "code": code}}
     return make_response(error, code)

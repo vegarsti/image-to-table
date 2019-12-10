@@ -6,8 +6,7 @@ import opencv_wrapper as cvw
 import scipy.ndimage as snd
 
 
-def find_columns(content: bytes) -> list:
-    image = cv2.imdecode(np.frombuffer(content, np.uint8), 1)
+def find_columns(image: np.ndarray) -> list:
     gray = cvw.bgr2gray(image)
     otsu = cvw.threshold_otsu(gray, inverse=True)
     x_axis_sum = np.sum(otsu, axis=0).astype(np.float64)
